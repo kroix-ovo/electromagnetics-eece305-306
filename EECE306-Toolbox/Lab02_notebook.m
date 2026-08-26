@@ -1,5 +1,5 @@
 %% EECE 306 Lab 2 notebook. Coordinate Systems, Points and Vector Components
-% *Team NN.* TODO replace with your team number and member names.
+% *Team 8.* Thalea Collymore, Kroix Jones, Xavier Moore
 %
 % Fill in every TODO, run |publish('Lab02_notebook.m')| from the toolbox
 % root, print the HTML to PDF, three to five pages.
