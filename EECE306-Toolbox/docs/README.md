@@ -1,8 +1,9 @@
 # EECE 306 lab documentation
 
-Keep the instructor-provided API specification and each lab handout in the
-toolbox root so they are easy to find while implementing code. Put optional
-team design notes, derivations, and reusable references in this directory.
+Keep the instructor-provided API specification in the toolbox root and lab
+handouts in `../Lab pdfs/` so they are easy to find while implementing code.
+Put optional team design notes, derivations, and reusable references in this
+directory.
 
 The source-of-truth submission pattern for every lab is:
 
