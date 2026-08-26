@@ -15,5 +15,6 @@ em.test.assertClose(em.vec.fromTo([1 1 1],[2 3 4]), [1 2 3], 1e-12, 'fromTo');
 A = randn(100,3);
 assert(isequal(size(em.vec.mag(A)),  [100 1]), 'mag must return Nx1');
 assert(isequal(size(em.vec.unit(A)), [100 3]), 'unit must return Nx3');
-
+assert(isequal(size(em.vec.angle(A, A)), [100 1]), 'angle must return Nx1');
+assert(isequal(size(em.vec.fromTo(A, A)), [100 3]), 'fromTo must return Nx3');
 disp('  test_lab01 checks complete');
