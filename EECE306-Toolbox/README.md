@@ -56,6 +56,6 @@ needs a useful MATLAB/Octave help block because grading includes `help` checks.
 ## Lab 1
 
 Implement `em.const.eps0`, `mu0`, `c0`, `eta0` and `em.vec.mag`, `unit`,
-`angle`, `fromTo` against `Lab pdfs/Lab01-3.pdf`. Use `Lab01_notebook.m` to
+`angle`, `fromTo` against `docs/Lab01-3.pdf`. Use `Lab01_notebook.m` to
 produce the required report. The provided Lab 1 test currently fails until
 those eight functions are in place; that is the expected initial state.

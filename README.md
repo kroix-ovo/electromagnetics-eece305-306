@@ -13,7 +13,7 @@ semester; do not treat each lab as a separate codebase.
     ├── +em/                       MATLAB/Octave package implementation
     ├── tests/                     Cumulative tests: test_lab01.m ... test_lab12.m
     ├── Lab01_notebook.m           Lab 1 publishable notebook template
-    ├── Lab pdfs/Lab01-3.pdf       Lab 1 requirements and submission format
+    ├── docs/Lab01-3.pdf           Lab 1 requirements and submission format
     ├── EECE306-API-Spec.pdf       Fixed API contract for the semester
     ├── runTests.m                 Provided test runner - do not modify
     └── submissions/               Local ZIP bundles for Canvas (not committed)
