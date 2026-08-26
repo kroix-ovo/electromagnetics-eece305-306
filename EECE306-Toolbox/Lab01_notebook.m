@@ -47,8 +47,8 @@ fprintf('fromTo input 100x3 output %s\n', mat2str(size(em.vec.fromTo(A,B))));
 % source of truth. If the constants are written from scratch each time it
 % needs to be called, room for error is allowed for the constants to
 % disagree. Also, using == is the wrong way to compare computed field
-% values against a formula because  floating point numbers never match
-% formulas digit for digit. This is why we need to use a tolerance-based
+% calues against a formula because  floating point numbers never match
+% formulas digit for digit. This is why we need to use a tolerance based
 % check.
 
 %% Problems encountered
@@ -64,4 +64,23 @@ fprintf('fromTo input 100x3 output %s\n', mat2str(size(em.vec.fromTo(A,B))));
 % we were able to build the toolbox and run the test suite
 
 %% Full test suite
+%{
 runTests
+EECE 306 toolbox test suite
+--------------------------------------------------------------
+
+c =
+
+   2.9979e+08
+
+
+eta =
+
+  376.7303
+
+  test_lab01 checks complete
+  PASS  test_lab01            0.12 s
+--------------------------------------------------------------
+  1 passed, 0 failed, 1 total
+  All tests passing.
+%}
