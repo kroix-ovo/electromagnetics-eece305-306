@@ -1,5 +1,5 @@
 %% EECE 306 Lab 1 notebook. Building the Toolbox, Constants and Vector Algebra
-% *Team NN.* TODO replace with your team number and member names.
+% *Team 8.* Thalea Collymore, Kroix Jones, Xavier Moore
 %
 % Fill in every item marked TODO, then run |publish('Lab01_notebook.m')|
 % from the toolbox root and print the resulting HTML to PDF. Three to five
@@ -43,10 +43,25 @@ fprintf('fromTo input 100x3 output %s\n', mat2str(size(em.vec.fromTo(A,B))));
 % computed from eps0 and mu0 rather than typed in as numbers, and why is
 % == the wrong way to compare a computed field value against a formula.
 
+% c0 and eta0 must be computed from eps0 and mu0 so that there is a single
+% source of truth. If the constants are written from scratch each time it
+% needs to be called, room for error is allowed for the constants to
+% disagree. Also, using == is the wrong way to compare computed field
+% values against a formula because  floating point numbers never match
+% formulas digit for digit. This is why we need to use a tolerance-based
+% check.
+
 %% Problems encountered
 % TODO state plainly anything that did not work and what was tried. An
 % honest account of a failure earns more credit than silence. Write NONE
 % if the session was clean.
+
+%Our challenge during this lab was familiarizing ourselves with the MATLAB
+% workspace and its  programming syntax. At first, understanding the
+% purpose of the package directory structure and having the correct
+% placement for our newly created .m files was a bit difficult. Once we 
+% understood how MATLAB uses the folders to organize and call functions
+% we were able to build the toolbox and run the test suite
 
 %% Full test suite
 runTests
