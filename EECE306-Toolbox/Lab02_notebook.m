@@ -40,17 +40,18 @@ fprintf('vector roundtrip (cylindrical pair) max error = %.3e\n', ev2);
 A0 = [2 3 0];
 disp('at (0, 5, 0), (Ar, Atheta, Aphi) ='); disp(em.coord.vecC2Sph(A0, [0 5 0]))
 disp('at (4, 0, 0), (Ar, Atheta, Aphi) ='); disp(em.coord.vecC2Sph(A0, [4 0 0]))
-% TODO two to four sentences. The vector did not change. Explain exactly
-% what did change, and why a position argument is therefore mandatory for
-% component conversion and meaningless for point conversion.
+% The vector stayed at 2x +3x. The shperical coordinates changed because the spherical unit vectors are dependent on their position
+%A position arguement is mandatory for component converson as it determines the oreintation of the spherical coordinates at the location. 
+% Point conversion is meaningless as they are the same and not relative to the coordinate directions.
 
 %% Interpretation
-% TODO what class of bug does the roundtrip test catch, and what class
-% does it miss. Name the invariant that catches what the roundtrip
-% misses, and say why it is reference free.
+% the roundtrip tests catches a bug where the two functions are inconsistant with each other, which can happen from  incorrect formulas,
+%or coordinates not in the right space. It does not catch if both functions make the same mistake, as converting back and forth would 
+%would still give the same point. The invariant that catches this error is the vector magnitude. It is refernce free because
+%because it does not depend on any coordiante systems. 
 
 %% Problems encountered
-% TODO honest account, or NONE.
+% Some vectors modules didnt run correctly the first time due to either incorrect variables used or typos.
 
 %% Full test suite
 %{
