@@ -54,25 +54,4 @@ disp('at (4, 0, 0), (Ar, Atheta, Aphi) ='); disp(em.coord.vecC2Sph(A0, [4 0 0]))
 % Some vectors modules didnt run correctly the first time due to either incorrect variables used or typos.
 
 %% Full test suite
-%{
 runTests
-EECE 306 toolbox test suite
---------------------------------------------------------------
-
-c =
-
-   2.9979e+08
-
-
-eta =
-
-  376.7303
-
-  test_lab01 checks complete
-  PASS  test_lab01            0.06 s
-  PASS  test_lab02            0.19 s
---------------------------------------------------------------
-  2 passed, 0 failed, 2 total
-  All tests passing.
-
-%}
