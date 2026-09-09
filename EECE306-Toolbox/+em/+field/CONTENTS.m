@@ -1,1 +1,2 @@
-% This folder holds the em.field module. Add your .m files here.
+% em.field - Electromagnetic field evaluation.
+%   E - Evaluate the electric field of a charge source.

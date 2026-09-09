@@ -1,1 +1,2 @@
-% This folder holds the em.viz module. Add your .m files here.
+% em.viz - Electromagnetic field visualization.
+%   quiver2 - Plot a two-dimensional vector-field sample.

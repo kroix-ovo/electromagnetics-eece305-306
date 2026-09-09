@@ -1,1 +1,3 @@
-% This folder holds the em.src module. Add your .m files here.
+% em.src - Electromagnetic source construction.
+%   pointCharge - Construct a point-charge source.
+%   merge       - Concatenate compatible source element lists.
