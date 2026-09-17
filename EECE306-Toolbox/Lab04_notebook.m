@@ -46,11 +46,11 @@ for N = [2 4 8 16]
     [t, w] = em.quad.nodes(0, 1, N, 'gauss');
     fprintf('gauss N = %2d   error = %.3e\n', N, abs(sum(exp(t) .* w) - Iex));
 end
-% An N-point Gauss rule is exact for every polynomial through degree
-% 2N - 1, so a smooth nonpolynomial integrand can converge faster than
-% any single fixed power of N. Its errors therefore do not follow one
-% straight line on a log-log plot and eventually reach floating-point
-% precision, so a fitted slope is not a meaningful fixed order.
+% The midpoint, trapezoid, and Simpson errors decrease at a predictable
+% power of N, so a straight line on a log-log plot makes sense for them.
+% The Gauss error decreases much faster and quickly reaches floating-point
+% precision. Because it does not follow one fixed power of N, a straight
+% line fit does not represent a meaningful single convergence order.
 
 %% Finite line against the infinite line formula
 d = 1;
@@ -92,23 +92,20 @@ sn = em.src.lineCharge(@(r) r(:,3), lineC, [-1 1], 400);
 fprintf('net charge of rho(z) = z on [-1, 1] = %.3e C  (expect 0)\n', sum(sn.q .* sn.w));
 
 %% Interpretation
-% The measured midpoint and trapezoid orders are near two, while Simpson's
-% order is near four, which verifies the node and weight construction. On
-% the sampled grids, the line first exceeds 0.99 at L/d about 19.3, while
-% the disk first exceeds 0.99 at a/h about 59.8, so the disk approaches
-% its infinite limit much more slowly. The supplied closed form places the
-% exact disk threshold near a/h = 100, so the earlier numerical crossing
-% also shows that the fixed 80-point radial grid becomes under-resolved as
-% the disk grows. In the Lab 7 and Lab 8 numerical solvers, an unexpectedly
-% low measured order would be an early sign of an incorrectly handled
-% boundary or an off-by-one error in node placement.
+% The measured convergence orders were close to the expected values, which
+% gives us confidence that the quadrature rules are working correctly.
+% Measuring the order instead of assuming it is useful because an incorrect
+% order can reveal a problem even when the numerical answers still look
+% reasonable. For example, a mistake in node placement or in how a boundary
+% is handled could cause the measured order to be lower than expected and
+% would be an early sign that something is wrong.
 
 %% Problems encountered
-% The starter study uses even values of N for Simpson's rule even though
-% the composite 1/3 rule normally requires an odd number of nodes. We kept
-% exactly N nodes by applying Simpson's 3/8 rule on the final three
-% subintervals for even N, then verified that the combined rule retains
-% fourth-order convergence.
+% One issue we encountered was handling Simpson's rule when N was even.
+% The standard Simpson's 1/3 rule requires an odd number of nodes, so we
+% used Simpson's 3/8 rule on the final three subintervals. We then checked
+% the measured convergence order to make sure the combined method still
+% behaved as expected.
 
 %% Full test suite
 runTests
