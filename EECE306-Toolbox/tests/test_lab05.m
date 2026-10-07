@@ -166,7 +166,7 @@ for k = 1:numel(badCalls)
     catch err
         caught = true;
         if k == numel(badCalls)
-            assert(contains(err.message,'element 1'),'flux must name singular source element');
+            assert(~isempty(strfind(err.message,'element 1')),'flux must name singular source element');
         end
     end
     assert(caught,'Invalid input or singularity must raise an error.');
