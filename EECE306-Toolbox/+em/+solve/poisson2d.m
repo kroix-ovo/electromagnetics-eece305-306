@@ -1,300 +1,85 @@
 function [V, info] = poisson2d(G, rho, epsr, mask, Vfix, opts)
-%POISSON2D Solve div(eps grad V) = -rho on a uniform 2D grid.
-%   [V,INFO] = EM.SOLVE.POISSON2D(G,RHO,EPSR,MASK,VFIX,OPTS) returns an
-%   Ny-by-Nx potential. G comes from EM.SOLVE.GRID2D. RHO is a scalar,
-%   Ny-by-Nx array, or function handle @(X,Y). EPSR is a positive scalar
-%   or Ny-by-Nx array and is uniform for the Lab 7 stencil. MASK is true
-%   where V is fixed to VFIX.
+%POISSON2D Solve div(eps grad V)=-rho with conservative face fluxes.
+%   [V,INFO]=EM.SOLVE.POISSON2D(G,RHO,EPSR,MASK,VFIX,OPTS) returns
+%   NyxNx volts. RHO is scalar, NyxNx, or @(X,Y), in C/m^3. EPSR is
+%   positive scalar or NyxNx. MASK fixes potentials at true nodes.
+%   Unmasked outer faces have zero normal flux (homogeneous Neumann).
+%   At least one fixed node is required to remove the constant nullspace.
 %
-%   OPTS.method is 'jacobi', 'gs', 'sor', or 'direct'. OPTS.tol,
-%   OPTS.maxit, and OPTS.omega default to 1e-8, 20000, and 1.9. Boundary
-%   nodes outside MASK use homogeneous Neumann conditions. INFO contains
-%   iter, resHist, time, and method.
+%   OPTS.method: 'direct', 'jacobi', 'gs', or 'sor' (default 'sor');
+%   tol=1e-8, maxit=20000, omega=1.9. OPTS.faceMean is 'harmonic'
+%   (default) or 'arithmetic' for the Lab 8 comparison. A material jump
+%   is represented halfway between adjacent nodes of different materials.
+%   INFO contains iter, resHist (maximum potential update in V), time,
+%   method, and residual (maximum diagonal-scaled equation residual in V).
+%   Direct and iterative methods use the same node-centered flux stencil.
 %
-%   See also EM.SOLVE.GRID2D, EM.TEST.MMS2D.
-
-if nargin < 6 || isempty(opts), opts = struct(); end
-if ~isfield(opts,'method'), opts.method = 'sor'; end
-if ~isfield(opts,'tol'),    opts.tol = 1e-8; end
-if ~isfield(opts,'maxit'),  opts.maxit = 20000; end
-if ~isfield(opts,'omega'),  opts.omega = 1.9; end
-validateOptions(opts);
-
-[Ny, Nx] = validateGrid(G);
-hx2 = G.hx^2;
-hy2 = G.hy^2;
-e0 = em.const.eps0();
-
-R = expand(rho, Ny, Nx, G, 'rho');
-E = expand(epsr, Ny, Nx, G, 'epsr');
-
-if any(E(:) <= 0)
-    error('em:solve:poisson2d:InvalidPermittivity', ...
-        'epsr values must be positive.');
+%   Example:
+%       G=em.solve.grid2d([0 1],[0 1],21,21);
+%       m=false(21); m(:,[1 end])=true; v=zeros(21); v(:,1)=1;
+%       V=em.solve.poisson2d(G,0,1,m,v,struct('method','direct'));
+%
+%   See also EM.SOLVE.GRID2D, EM.DERIVE.ENERGYE.
+if nargin<6 || isempty(opts), opts=struct(); end
+if ~(isstruct(opts)&&isscalar(opts)), error('em:solve:poisson2d:Options','opts must be a scalar struct.'); end
+method=option(opts,'method','sor'); tol=option(opts,'tol',1e-8);
+maxit=option(opts,'maxit',20000); omega=option(opts,'omega',1.9);
+meanType=option(opts,'faceMean','harmonic');
+if ~ischar(method)||~ismember(lower(method),{'direct','jacobi','gs','sor'}), error('em:solve:poisson2d:Method','opts.method is invalid.'); end
+if ~ischar(meanType)||~ismember(lower(meanType),{'harmonic','arithmetic'}), error('em:solve:poisson2d:Mean','opts.faceMean must be harmonic or arithmetic.'); end
+if ~(isnumeric(tol)&&isreal(tol)&&isscalar(tol)&&isfinite(tol)&&tol>0), error('em:solve:poisson2d:Tol','opts.tol must be positive.'); end
+if ~(isnumeric(maxit)&&isreal(maxit)&&isscalar(maxit)&&isfinite(maxit)&&maxit>=1&&maxit==floor(maxit)), error('em:solve:poisson2d:Maxit','opts.maxit must be a positive integer.'); end
+if ~(isnumeric(omega)&&isreal(omega)&&isscalar(omega)&&isfinite(omega)&&omega>0&&omega<2), error('em:solve:poisson2d:Omega','opts.omega must lie between 0 and 2.'); end
+if ~isstruct(G)||~isscalar(G)||~all(isfield(G,{'X','Y','hx','hy'})), error('em:solve:poisson2d:Grid','G must come from grid2d.'); end
+sz=size(G.X); ny=sz(1); nx=sz(2);
+if numel(sz)~=2||min(sz)<2||~isequal(size(G.Y),sz)||any(~isfinite(G.X(:)))||any(~isfinite(G.Y(:)))||~isscalar(G.hx)||~isscalar(G.hy)||G.hx<=0||G.hy<=0||~isfinite(G.hx)||~isfinite(G.hy)
+    error('em:solve:poisson2d:Grid','G must contain finite 2D coordinates and positive spacings.');
 end
-
-if ~(islogical(mask) && isequal(size(mask), [Ny Nx]))
-    error('em:solve:poisson2d:InvalidMask', ...
-        'mask must be a logical Ny-by-Nx array.');
-end
-
-if ~(isnumeric(Vfix) && isreal(Vfix) && isequal(size(Vfix), [Ny Nx]) ...
-        && all(isfinite(Vfix(:))))
-    error('em:solve:poisson2d:InvalidFixedValues', ...
-        'Vfix must be a finite real Ny-by-Nx array.');
-end
-
-% Right-hand side of the stencil equation, Laplacian(V) = S.
-S = -R ./ (e0 * E);
-
-% Five-point stencil for unequal x and y spacing.
-cx = 1 / hx2;
-cy = 1 / hy2;
-cc = -2 * (cx + cy);
-
-t0 = tic;
-method = lower(opts.method);
-
-switch method
-    case 'direct'
-        V = solveDirect(Ny, Nx, cx, cy, cc, S, mask, Vfix);
-        info = struct('iter', 1, 'resHist', [], 'time', toc(t0), ...
-            'method', 'direct');
-
-    case {'jacobi', 'gs', 'sor'}
-        [V, it, resHist] = solveIterative( ...
-            Ny, Nx, cx, cy, cc, S, mask, Vfix, opts);
-
-        info = struct('iter', it, 'resHist', resHist, 'time', toc(t0), ...
-            'method', method);
-
-    otherwise
-        error('em:solve:poisson2d:BadMethod', ...
-            'Unknown method %s.', opts.method);
-end
-end
-
-function [V, it, resHist] = solveIterative( ...
-        Ny, Nx, cx, cy, cc, S, mask, Vfix, opts)
-
-V = zeros(Ny, Nx);
-V(mask) = Vfix(mask);
-
-jacobi = strcmpi(opts.method, 'jacobi');
-sor = strcmpi(opts.method, 'sor');
-
-w = opts.omega;
-resHist = zeros(opts.maxit, 1);
-
-for it = 1:opts.maxit
-
-    Vold = V;
-
-    for j = 1:Nx
-        for i = 1:Ny
-
-            if mask(i,j)
-                continue
-            end
-
-            [iu, id, jl, jr] = neigh(i, j, Ny, Nx);
-
-            if jacobi
-                vu = Vold(iu,j);
-                vd = Vold(id,j);
-                vl = Vold(i,jl);
-                vr = Vold(i,jr);
-            else
-                vu = V(iu,j);
-                vd = V(id,j);
-                vl = V(i,jl);
-                vr = V(i,jr);
-            end
-
-            vnew = (S(i,j) - cx*(vl + vr) - cy*(vu + vd)) / cc;
-
-            if sor
-                V(i,j) = V(i,j) + w * (vnew - V(i,j));
-            else
-                V(i,j) = vnew;
-            end
+if isa(rho,'function_handle'), rho=rho(G.X,G.Y); end
+R=expand(rho,sz,'rho'); E=expand(epsr,sz,'epsr');
+if any(E(:)<=0), error('em:solve:poisson2d:Permittivity','epsr must be positive.'); end
+if ~islogical(mask)||~isequal(size(mask),sz)||~any(mask(:)), error('em:solve:poisson2d:Mask','mask must be NyxNx logical with at least one fixed node.'); end
+if ~isnumeric(Vfix)||~isreal(Vfix)||~isequal(size(Vfix),sz)||any(~isfinite(Vfix(mask))), error('em:solve:poisson2d:Vfix','Vfix must be NyxNx and finite at mask nodes.'); end
+t0=tic;
+wx=ones(1,nx); wx([1 end])=0.5; wy=ones(ny,1); wy([1 end])=0.5;
+ex=face(E(:,1:end-1),E(:,2:end),meanType).*wy*(G.hy/G.hx);
+ey=face(E(1:end-1,:),E(2:end,:),meanType).*wx*(G.hx/G.hy);
+ix=reshape(1:ny*nx,sz); p=[reshape(ix(:,1:end-1),[],1);reshape(ix(1:end-1,:),[],1)];
+q=[reshape(ix(:,2:end),[],1);reshape(ix(2:end,:),[],1)]; c=[ex(:);ey(:)];
+K=sparse([p;q;p;q],[p;q;q;p],[c;c;-c;-c],ny*nx,ny*nx);
+b=R.*(wy*wx)*(G.hx*G.hy/em.const.eps0());
+u=find(~mask); fixed=find(mask); A=K(u,u); b=b(u)-K(u,fixed)*Vfix(fixed);
+V=zeros(sz); V(mask)=Vfix(mask); iter=0; history=[]; residual=0;
+if ~isempty(u)
+    d=diag(A); x=zeros(numel(u),1);
+    if strcmpi(method,'direct')
+        x=A\b; iter=1;
+    else
+        D=spdiags(d,0,numel(u),numel(u)); L=tril(A,-1); U=triu(A,1);
+        if strcmpi(method,'sor'), T=D+omega*L; B=omega*U+(omega-1)*D; else, T=D+L; B=U; end
+        history=zeros(maxit,1);
+        for iter=1:maxit
+            old=x;
+            if strcmpi(method,'jacobi'), x=x+(b-A*x)./d;
+            elseif strcmpi(method,'gs'), x=T\(b-B*x);
+            else, x=T\(omega*b-B*x); end
+            history(iter)=norm(x-old,inf);
+            if history(iter)<tol, break; end
         end
+        history=history(1:iter);
+        if iter==maxit&&history(end)>=tol, warning('em:solve:poisson2d:NoConvergence','opts.maxit reached before opts.tol.'); end
     end
-
-    r = norm(V(:) - Vold(:), inf);
-    resHist(it) = r;
-
-    if r < opts.tol
-        break
-    end
+    V(u)=x; residual=norm((A*x-b)./d,inf);
 end
-
-resHist = resHist(1:it);
+info=struct('iter',iter,'resHist',history,'time',toc(t0),'method',lower(method),'residual',residual);
 end
-
-function V = solveDirect(Ny, Nx, cx, cy, cc, S, mask, Vfix)
-
-n = Ny * Nx;
-idx = @(i,j) (j - 1) * Ny + i;
-
-I = zeros(5*n,1);
-J = I;
-X = I;
-b = zeros(n,1);
-k = 0;
-
-for j = 1:Nx
-    for i = 1:Ny
-
-        p = idx(i,j);
-
-        if mask(i,j)
-            k = k + 1;
-            I(k) = p;
-            J(k) = p;
-            X(k) = 1;
-            b(p) = Vfix(i,j);
-            continue
-        end
-
-        [iu, id, jl, jr] = neigh(i, j, Ny, Nx);
-
-        k = k + 1;
-        I(k) = p;
-        J(k) = p;
-        X(k) = cc;
-
-        k = k + 1;
-        I(k) = p;
-        J(k) = idx(i,jr);
-        X(k) = cx;
-
-        k = k + 1;
-        I(k) = p;
-        J(k) = idx(i,jl);
-        X(k) = cx;
-
-        k = k + 1;
-        I(k) = p;
-        J(k) = idx(iu,j);
-        X(k) = cy;
-
-        k = k + 1;
-        I(k) = p;
-        J(k) = idx(id,j);
-        X(k) = cy;
-
-        b(p) = S(i,j);
-    end
+function v=option(o,n,d)
+if isfield(o,n), v=o.(n); else, v=d; end
 end
-
-A = sparse(I(1:k), J(1:k), X(1:k), n, n);
-
-V = reshape(A \ b, Ny, Nx);
+function a=expand(a,sz,name)
+if isnumeric(a)&&isscalar(a), a=repmat(a,sz); end
+if ~isnumeric(a)||~isreal(a)||~isequal(size(a),sz)||any(~isfinite(a(:))), error('em:solve:poisson2d:Input','%s must be finite real scalar or NyxNx.',name); end
 end
-
-function [iu, id, jl, jr] = neigh(i, j, Ny, Nx)
-
-if i == 1
-    iu = 2;
-    id = 2;
-elseif i == Ny
-    iu = Ny - 1;
-    id = Ny - 1;
-else
-    iu = i + 1;
-    id = i - 1;
-end
-
-if j == 1
-    jr = 2;
-    jl = 2;
-elseif j == Nx
-    jr = Nx - 1;
-    jl = Nx - 1;
-else
-    jr = j + 1;
-    jl = j - 1;
-end
-
-end
-
-function M = expand(value, Ny, Nx, G, name)
-
-if isa(value, 'function_handle')
-    M = value(G.X, G.Y);
-elseif isscalar(value)
-    M = repmat(value, Ny, Nx);
-else
-    M = value;
-end
-
-if ~(isnumeric(M) && isreal(M) && isequal(size(M), [Ny Nx]) ...
-        && all(isfinite(M(:))))
-    error('em:solve:poisson2d:InvalidInput', ...
-        '%s must produce a finite real Ny-by-Nx array.', name);
-end
-end
-
-function [Ny, Nx] = validateGrid(G)
-
-required = {'X','Y','hx','hy'};
-
-if ~isstruct(G) || ~all(isfield(G, required))
-    error('em:solve:poisson2d:InvalidGrid', ...
-        'G must be a grid struct from em.solve.grid2d.');
-end
-
-[Ny, Nx] = size(G.X);
-
-if ~(isnumeric(G.X) && isreal(G.X) && ...
-        isnumeric(G.Y) && isreal(G.Y) && ...
-        isequal(size(G.Y), [Ny Nx]) && ...
-        Ny >= 2 && Nx >= 2 && ...
-        all(isfinite(G.X(:))) && ...
-        all(isfinite(G.Y(:))) && ...
-        isnumeric(G.hx) && isscalar(G.hx) && ...
-        isfinite(G.hx) && G.hx > 0 && ...
-        isnumeric(G.hy) && isscalar(G.hy) && ...
-        isfinite(G.hy) && G.hy > 0)
-
-    error('em:solve:poisson2d:InvalidGrid', ...
-        'G must contain finite Ny-by-Nx coordinates and positive spacings.');
-end
-end
-
-function validateOptions(opts)
-
-if ~(isstruct(opts) && isscalar(opts))
-    error('em:solve:poisson2d:InvalidOptions', ...
-        'opts must be a scalar struct.');
-end
-
-if ~(ischar(opts.method) && isrow(opts.method))
-    error('em:solve:poisson2d:InvalidMethod', ...
-        'opts.method must be text.');
-end
-
-if ~(isnumeric(opts.tol) && isreal(opts.tol) && ...
-        isscalar(opts.tol) && isfinite(opts.tol) && opts.tol > 0)
-
-    error('em:solve:poisson2d:InvalidTolerance', ...
-        'opts.tol must be a finite positive scalar.');
-end
-
-if ~(isnumeric(opts.maxit) && isreal(opts.maxit) && ...
-        isscalar(opts.maxit) && isfinite(opts.maxit) && ...
-        opts.maxit == floor(opts.maxit) && opts.maxit >= 1)
-
-    error('em:solve:poisson2d:InvalidIterationLimit', ...
-        'opts.maxit must be a positive integer scalar.');
-end
-
-if ~(isnumeric(opts.omega) && isreal(opts.omega) && ...
-        isscalar(opts.omega) && isfinite(opts.omega) && ...
-        opts.omega > 0 && opts.omega < 2)
-
-    error('em:solve:poisson2d:InvalidOmega', ...
-        'opts.omega must be between 0 and 2.');
-end
+function f=face(a,b,kind)
+if strcmpi(kind,'harmonic'), f=2./(1./a+1./b); else, f=(a+b)/2; end
 end
