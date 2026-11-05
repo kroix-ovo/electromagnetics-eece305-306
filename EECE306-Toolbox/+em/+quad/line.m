@@ -1,8 +1,10 @@
-function [pos, w] = line(curve, tspan, N, rule)
+function [pos, w, tangent] = line(curve, tspan, N, rule)
 %LINE Discretize a parameterized curve with arc-length weights.
 %   [POS, W] = EM.QUAD.LINE(CURVE, TSPAN, N, RULE) returns Nx3 Cartesian
 %   positions and Nx1 weights in meters. CURVE maps a scalar parameter to
 %   a 1x3 position. The default rule is 'midpoint'.
+%   Optional third output TANGENT is Nx3 dr/dt before normalization or
+%   quadrature weighting. Existing two-output callers are unchanged.
 %
 %   Example:
 %       c = @(t) [cos(t) sin(t) 0];
@@ -17,6 +19,7 @@ validateSpan(tspan, 'tspan');
 dt = 1e-6 * (tspan(2)-tspan(1));
 pos = evaluateCurve(curve, t);
 dpos = (evaluateCurve(curve, t+dt) - evaluateCurve(curve, t-dt))/(2*dt);
+tangent = dpos;
 w = sqrt(sum(dpos.^2,2)) .* wnode;
 end
 

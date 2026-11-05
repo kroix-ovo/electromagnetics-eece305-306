@@ -90,3 +90,37 @@ are reported separately at the widest strip, not as a universal error bound.
 The air-filled solve uses the same box and mask, with quasi-TEM impedance
 `Z0=1/(c0*sqrt(C*Cair))`. Staircased conductor and dielectric boundaries
 limit geometric accuracy even when the linear solve has a tiny residual.
+
+
+## Lab 9: current sources and Biot-Savart
+
+`Lab09_notebook.m` runs the shared, uncached experiments in
+`tests/lab09_studies.m`, followed by all nine test files through `runTests`.
+The new APIs are `em.src.lineCurrent`, `em.src.surfCurrent`, `em.field.H`
+(A/m), and `em.field.B` (T). `B` defaults to relative permeability one and
+uses `em.const.mu0()`. This gives 47 API functions including the provided
+assertion helper.
+
+`em.quad.line` has an optional third output, the directed raw tangent dr/dt.
+Its first two outputs are unchanged. `lineCurrent` uses that tangent and
+the arc-length weight to form `Idl`; it does not differentiate again.
+`surfCurrent` evaluates vector K at the quadrature positions and multiplies
+it by area weights. Both constructors store weights inside `Idl` exactly
+once. `H` sums `Idl cross (r-source)/R^3`, so it must not multiply by `w`
+again. Existing `E` and `merge` are unchanged.
+
+Notebook changes beyond filled explanations remove the obsolete instruction
+to fill placeholders, show small loop errors in scientific notation, add the
+required aspect sweep, and resolve two starter geometry issues. The finite
+wire is plotted using full length L, matching Lab 4; the Lab 9 handout calls
+L/2 h. Both threshold conventions are printed. The solenoid uses 200
+midpoint turns rather than 25 endpoint turns, and its axial field is checked
+against an independent sum of closed-form loop fields and a refined winding.
+The reported 99 percent crossings are first sampled brackets, not exact
+continuous thresholds. The H timing is the measured review-to-first-passing
+kernel-check interval, not an estimate of team labor or total Lab 9 time.
+
+The source sheet test checks a finite square's analytic solid-angle field;
+additional checks cover nonuniform K, surface parameter reversal, off-axis
+loop refinement, current and curve reversal, B scaling, element-indexed
+singularity errors, mixed-source rejection, and 5000/10000 point timings.
