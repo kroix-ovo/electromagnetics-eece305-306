@@ -1,8 +1,11 @@
-function [pos, w] = line(curve, tspan, N, rule)
+function [pos, w, tangent, wnode] = line(curve, tspan, N, rule)
 %LINE Discretize a parameterized curve with arc-length weights.
 %   [POS, W] = EM.QUAD.LINE(CURVE, TSPAN, N, RULE) returns Nx3 Cartesian
 %   positions and Nx1 weights in meters. CURVE maps a scalar parameter to
 %   a 1x3 position. The default rule is 'midpoint'.
+%   [POS, W, TANGENT, WNODE] also returns dr/dt (Nx3) and parameter
+%   weights (Nx1). TANGENT.*WNODE is the directed displacement dL.
+%   The original two-output interface and arc-length weights are unchanged.
 %
 %   Example:
 %       c = @(t) [cos(t) sin(t) 0];
@@ -16,8 +19,8 @@ validateSpan(tspan, 'tspan');
 [t, wnode] = em.quad.nodes(tspan(1), tspan(2), N, rule);
 dt = 1e-6 * (tspan(2)-tspan(1));
 pos = evaluateCurve(curve, t);
-dpos = (evaluateCurve(curve, t+dt) - evaluateCurve(curve, t-dt))/(2*dt);
-w = sqrt(sum(dpos.^2,2)) .* wnode;
+tangent = (evaluateCurve(curve, t+dt) - evaluateCurve(curve, t-dt))/(2*dt);
+w = sqrt(sum(tangent.^2,2)) .* wnode;
 end
 
 function pos = evaluateCurve(curve, t)

@@ -1,0 +1,99 @@
+Lab 9 validation: output from the executed published notebook
+GNU Octave 10.3.0; OPENBLAS_NUM_THREADS=2; OMP_NUM_THREADS=2
+Working directory: EECE306-Toolbox
+Notebook asserts that all nine cumulative test files pass.
+See README.md for publishing and PDF export commands.
+
+Initial AI-assisted implementation/check: 1.22 minutes
+GNU Octave 10.3.0
+
+
+ z (m)    H_z (A/m)    relative error
+ 0.000     0.5000000     1.040e-11
+ 0.222     0.4651244     1.040e-11
+ 0.444     0.3815399     1.040e-11
+ 0.667     0.2880174     1.040e-11
+ 0.889     0.2087592     1.040e-11
+ 1.111     0.1496855     1.040e-11
+ 1.333     0.1080000     1.040e-11
+ 1.556     0.0790638     1.040e-11
+ 1.778     0.0589186     1.040e-11
+ 2.000     0.0447214     1.040e-11
+Center 0.500000000 A/m; expected 0.500000000 A/m
+Max transverse 1.974e-14 A/m; absolute tolerance 5.0e-13 A/m
+
+
+Wire h/rho 7.00 -> ratio 0.98994951
+Wire h/rho 7.25 -> ratio 0.99062114 (first >= 0.99)
+Analytic half-length crossing 7.017924; full-length crossing 14.035848
+Lab 4 original coarse full-length sample: L/rho 19.3070
+Max electric/magnetic ratio difference on the same grid: 3.997e-15
+
+
+Solenoid h/a 14.00 -> center/(NI/h) 0.98994974
+Solenoid h/a 14.25 -> center/(NI/h) 0.99029421 (first >= 0.99)
+Continuous-winding crossing h/a 14.035848
+100 vs 200 turns, normalized threshold change 7.033e-07
+Profile h/a = 20: center/(NI/h) 0.995037; mouth/center 0.501867
+
+
+Current reversal residual 0.000e+00 A/m
+Double-current residual 0.000e+00 A/m
+Merged elements 800; expected 800
+Charge/current merge rejected: em:src:merge:TypeMismatch
+5000 observations, 400 elements: 0.197 s (limit 2 s)
+
+
+EECE 306 toolbox test suite
+--------------------------------------------------------------
+eta = 376.73
+  test_lab01 checks complete
+  PASS  test_lab01            0.01 s
+  test_lab02 checks complete
+  PASS  test_lab02            0.02 s
+  5000-point field evaluation: 0.0006 s
+  test_lab03 checks complete
+  PASS  test_lab03            0.02 s
+  test_lab04 checks complete
+  PASS  test_lab04            0.60 s
+  merged source: flux 5.00000000e-09 C, enclosed 5.00000000e-09 C
+  density errors at 128000 / 1024000 elements: 0.953% / 1.715% max
+  sphere / cube / closed hemisphere: 3.00000000e-09 / 3.00000000e-09 / 3.00000000e-09 C
+  sphere Gauss rel err 1.59e-11; midpoint N=960 rel err 4.46e-07
+  test_lab05 checks complete
+  PASS  test_lab05           20.08 s
+  Lab 6: max absolute map error 7.776e-04 V/m
+  max closed residual / (max|E| L) 1.252e-13
+  Square vs exact-tangent edges 4.177e-11 V
+  open midpoint errors [0.0004329 0.0001082 2.706e-05 6.764e-06] V (order 2)
+  Fixed line refinement 4.965e-06 V
+  growing line potentials 25.9495 -> 37.6527 V
+  warning verified
+  Step minimum h=3.162e-06 m, error 1.025e-11
+  default error 3.586e-11
+  10000 points V/grad 0.001/0.007 s
+  test_lab06 checks complete
+  PASS  test_lab06            1.21 s
+  Lab 7: MMS error 8.224e-05, order 2.042
+  Jacobi / GS / SOR iterations 1320 / 689 / 77
+  Gauss flux 2.5947e-09 C, enclosed 2.5000e-09 C
+  test_lab07 checks complete
+  PASS  test_lab07            0.36 s
+  Lab 8: plate error 8.882e-16; constant-layer error 8.549e-15
+  Graded-layer orders harmonic 2.000; arithmetic 0.996
+  Coax finest error 1.471%; order 0.983
+  Voltage ratio 1.0000000000; filled ratio 3.0000000000
+  Bar R 0.01000000 ohm m; tangential E jump 1.776e-14 V/m
+  test_lab08 checks complete
+  PASS  test_lab08            3.15 s
+  Lab 9: max loop relative error 1.040e-11; transverse 1.974e-14 A/m (tol 5.0e-13)
+  Wire half-length h/rho 7.25; full-length L/rho 14.50; ratio 0.99062114
+  Solenoid full-height h/a 14.25; ratio 0.99029421; mouth/center 0.501867
+  H timings: 5000 points 0.099 s; 10000 points 0.197 s
+  Surface current, B scaling, reversal, merge, input and singularity checks passed
+  test_lab09 checks complete
+  PASS  test_lab09            3.01 s
+--------------------------------------------------------------
+  9 passed, 0 failed, 9 total
+  All tests passing.
+ 

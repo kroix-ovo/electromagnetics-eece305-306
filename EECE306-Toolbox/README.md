@@ -90,3 +90,39 @@ are reported separately at the widest strip, not as a universal error bound.
 The air-filled solve uses the same box and mask, with quasi-TEM impedance
 `Z0=1/(c0*sqrt(C*Cair))`. Staircased conductor and dielectric boundaries
 limit geometric accuracy even when the linear solve has a tiny residual.
+
+## Lab 9: current sources and magnetic fields
+
+`lineCurrent` and `surfCurrent` produce `type='current'` sources. Their
+`Idl` arrays already include quadrature weights; `H` applies the Biot-Savart
+kernel once, and `B` returns `mur*em.const.mu0()*H`. Existing `merge` handles
+current sources and continues to reject mixed charge/current inputs.
+`em.quad.line` retains its original two outputs and optionally returns the
+curve tangent and parameter weights as outputs three and four.
+
+From this toolbox root, run:
+
+```matlab
+results = runTests();
+assert(numel(results)==9 && all([results.passed]));
+publish('Lab09_notebook.m', struct('format','html','outputDir',fullfile(pwd,'html','Lab09'), ...
+    'showCode',false,'catchError',false));
+```
+
+For headless Octave, select `graphics_toolkit('gnuplot')` and
+`set(0,'defaultfigurevisible','off')` before publishing. The notebook runs
+`tests/lab09_studies.m` and the full suite rather than reading cached results.
+The report is `docs/Team08_Lab09.pdf`; the original handout is `docs/Lab09.pdf`.
+Local Canvas bundles belong in `submissions/Team08_Lab09.zip` and stay ignored.
+With Python packages `playwright` and `pypdf` and a local Chromium browser,
+`python tools/export_lab09.py` exports the executed HTML to a five-page PDF
+and saves its numerical and cumulative test output in `docs/Lab09-validation.txt`.
+It verifies that both figures loaded and all nine labs passed before export.
+
+The wire study uses half-length `h` (total length `2h`), while the solenoid
+study uses full height `h`. The solenoid places 200 loops at midpoint turn
+centers and checks a 100-turn refinement. Two existing Lab 6 assertions use
+array flattening instead of MATLAB-only `max(...,[],'all')`; the assertions
+and tolerances are otherwise unchanged for Octave compatibility. The Lab 6
+reference-warning test promotes that specific warning to an error so
+unrelated Octave package warnings cannot overwrite the result.
